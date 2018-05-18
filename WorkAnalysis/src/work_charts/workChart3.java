@@ -302,7 +302,9 @@ public class workChart3 extends ApplicationFrame {
 									datetimeString(project500List.get(z).getDateTimeBegin()),
 									datetimeString(project500List.get(z).getDateTimeEnd())
 							);
-							sub.setPercentComplete(1.50); // TA LINIA RENDERUJE BAR W BARZE - MOZNA GO UZYC DO POKAZANIA CZASU TEORETYCZNEGO (ILE NA OBROBKE PRZEWIDZIAL TECHNOLOG)
+							// TA LINIA RENDERUJE BAR W BARZE - MOZNA GO UZYC DO POKAZANIA CZASU TEORETYCZNEGO (ILE NA OBROBKE PRZEWIDZIAL TECHNOLOG)
+							// DANE NT. CZASOW TEORETYCZNYCH SA W TABELI WERKBON
+							sub.setPercentComplete(1.50); 
 							t.addSubtask(sub);
 							
 						}
