@@ -98,7 +98,7 @@ public class workChart3 extends ApplicationFrame {
             //koloruje pasek postepu (srodkowy)
             public Paint getCompletePaint(){
             	
-            	return Color.green;
+            	return new Color(89, 89, 89);
             }
             
         });
@@ -108,6 +108,7 @@ public class workChart3 extends ApplicationFrame {
         
         BarRenderer rendererBar = (BarRenderer) plot.getRenderer();
         rendererBar.setBarPainter(new StandardBarPainter());  // bary nie maja gradientu dzieki temu (nie "blyszcza")
+        rendererBar.setShadowVisible(false);
         
         // add the chart to a panel...
         final ChartPanel chartPanel = new ChartPanel(chart);
@@ -304,6 +305,9 @@ public class workChart3 extends ApplicationFrame {
 							);
 							// TA LINIA RENDERUJE BAR W BARZE - MOZNA GO UZYC DO POKAZANIA CZASU TEORETYCZNEGO (ILE NA OBROBKE PRZEWIDZIAL TECHNOLOG)
 							// DANE NT. CZASOW TEORETYCZNYCH SA W TABELI WERKBON
+							// proponuje zeby setPercentComplete bylo uzyte tylko do pierwszego subtaska (moze byc wyrazone w procencie obliczonym wg
+							// wzoru: czas rzeczywisty/czas jaki zaproponowal technolog. Czas rzeczywisty = suma trwania wszystkich subtaskow dla danego projektu 500
+							// najlepiej dane z tabeli WERKBON porownujac numer bonu (WERKONNUMER)
 							sub.setPercentComplete(1.50); 
 							t.addSubtask(sub);
 							
