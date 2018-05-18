@@ -33,15 +33,16 @@ import org.jfree.ui.RefineryUtilities;
 
 import work_charts.RCPdatabaseConnection;
 
-public class workChart extends ApplicationFrame {
+public class workChart2 extends ApplicationFrame {
 	
 	Connection connection=RCPdatabaseConnection.dbConnector("tosia", "1234");
 	ArrayList<Employee> employeeslist = new ArrayList<Employee>();
+	ArrayList<Project500> project500list = new ArrayList<Project500>();
 	LinkedHashMap<String, String> IOpair = new LinkedHashMap<String, String>();
 	
     public static void main(final String[] args) {
 
-        final workChart demo = new workChart("wykres czasu pracy");
+        final workChart2 demo = new workChart2("wykres czasu pracy");
         demo.pack();
         RefineryUtilities.centerFrameOnScreen(demo);
         demo.setVisible(true);
@@ -49,7 +50,7 @@ public class workChart extends ApplicationFrame {
     }
 
     // funkcja rysujaca wykres
-    public workChart(final String title) {
+    public workChart2(final String title) {
 
         super(title);
 
@@ -235,47 +236,38 @@ public class workChart extends ApplicationFrame {
 				// Old i New sluza do sprawdzenia czy jest wiecej rekordow z tym samym nr projektu (np. kilka razy pod rzad pojawia sie rekord 500/1)
 				String projectNrOld = "";
 				String projectNrNew = "";
-				int j = 0;
-				String projectBeginDay = "";
-				String projectBeginHour = "";
-				String projectBeginMin = "";
-				String projectEndDay = "";
-				String projectEndHour = "";
-				String projectEndMin = "";
 				
+				String date = "";
+				int beginH = 0;
+				int beginMIN = 0;
+				int endH = 0;
+				int endMIN = 0;
+								
 				// znalezienie pierwszego i ostatniego odbicia na projekt 500/x (jesli jest kilka zapisow na projekt 500/x, np. pracownik wiele razy przerywal prace, 
 				//to skrypt pobiera tylko godzine rozpoczecia pierwszego odbicia i godzine zakonczenia ostatniego odbicia)
 				while(rs3.next()){
 					
 					projectNrNew = rs3.getString("CFPROJECT");
-					if(j == 0){
-						projectBeginDay = rs3.getString("DATUM");
-						projectBeginHour = String.format("%1$02d", rs3.getInt("BEGINTIJDH"));
-						projectBeginMin = String.format("%1$02d", rs3.getInt("BEGINTIJDM60"));
-						projectEndDay = rs3.getString("DATUM");
-						projectEndHour = String.format("%1$02d", rs3.getInt("BEGINTIJDH"));
-						projectEndMin = String.format("%1$02d", rs3.getInt("BEGINTIJDM60"));
+					date = rs3.getString("DATUM");
+					beginH = rs3.getInt("BEGINTIJDH");
+					beginMIN = rs3.getInt("BEGINTIJDM60");
+					endH = rs3.getInt("EINDTIJDH");
+					endMIN = rs3.getInt("EINDTIJDM60");
+					
+					Project500 x = new Project500(projectNrNew, date, beginH, beginMIN, endH, endMIN);
+					
+					if(!projectNrNew.equals(projectNrOld)){
+						if(!project500list.isEmpty()){
+							project500list.clear();
+						}
 					}
-					if(projectNrNew.equals(projectNrOld)){
-						projectEndDay = rs3.getString("DATUM");
-						projectEndHour = String.format("%1$02d", rs3.getInt("BEGINTIJDH"));
-						projectEndMin = String.format("%1$02d", rs3.getInt("BEGINTIJDM60"));
-						j++;
-					}else{
-						j = 0;
-						// tutaj tworzy glownego taska dla jednego projektu 500/ (jeszcze bez subtaskow)
-						final Task t = new Task(
-								projectNrNew, 
-				                datetimeString(projectBeginDay + " " + projectBeginHour + ":" + projectBeginMin), datetimeString(projectEndDay + " " + projectEndHour + ":" + projectEndMin)
-								);
-						
-						System.out.println(projectNrNew);
-						System.out.println("START: "+projectBeginDay + " " + projectBeginHour + ":" + projectBeginMin);
-						System.out.println("END: "+projectEndDay + " " + projectEndHour + ":" + projectEndMin);
-						
-						s1.add(t);
-						
-					}
+					
+					project500list.add(x);
+					
+					
+					System.out.println(project500list.toString());
+					
+					
 					projectNrOld = rs3.getString("CFPROJECT");
 					
 				}

@@ -33,15 +33,17 @@ import org.jfree.ui.RefineryUtilities;
 
 import work_charts.RCPdatabaseConnection;
 
-public class workChart extends ApplicationFrame {
+public class workChart3 extends ApplicationFrame {
 	
 	Connection connection=RCPdatabaseConnection.dbConnector("tosia", "1234");
 	ArrayList<Employee> employeeslist = new ArrayList<Employee>();
+	ArrayList<Integer> project500iterateList = new ArrayList<Integer>();
+	ArrayList<Project500> project500List = new ArrayList<Project500>();
 	LinkedHashMap<String, String> IOpair = new LinkedHashMap<String, String>();
 	
     public static void main(final String[] args) {
 
-        final workChart demo = new workChart("wykres czasu pracy");
+        final workChart3 demo = new workChart3("wykres czasu pracy");
         demo.pack();
         RefineryUtilities.centerFrameOnScreen(demo);
         demo.setVisible(true);
@@ -49,7 +51,7 @@ public class workChart extends ApplicationFrame {
     }
 
     // funkcja rysujaca wykres
-    public workChart(final String title) {
+    public workChart3(final String title) {
 
         super(title);
 
@@ -150,9 +152,11 @@ public class workChart extends ApplicationFrame {
 		
 		// DLA KAZDEGO PRACOWNIKA STWORZ TASK (NARYSUJ BARY) - NAJPIERW BAR OD BRAMKI, A POZNIEJ BARY PRODUKCYJNE (przy barach produkcyjnych korzystam juz z danych z HacoSofta)
 		int i;
-		for(i = 0; i < employeeslist.size(); i++){
-			
+		for(i = 0; i < employeeslist.size(); i++){	
+		
 			IOpair.clear();
+			
+			System.out.println(employeeslist.get(i).getSurname_name());
 			
 			//W TYM MIEJSCU PRZYDALBY SIE SKRYPT UZUPELNIAJACY BAZE O BRAKUJACE WEJ/WYJ + FILTRUJACY POWTORZONE BLISKO SIEBIE ZAPISY!!!!!!!!
 			//pobierz pary wej/wyj dla kazdego pracownika osobno (omin wpisy typu nowy_pracownik)
@@ -223,60 +227,96 @@ public class workChart extends ApplicationFrame {
 			// stworz taski produkcyjne i ich subtaski - TASKI PRODUKCYJNE DLA POJEDYNCZEGO PRACOWNIKA
 			// na razie w trakcie testowania i pracy...nie dokonczylam
 			
-			String query3 = "SELECT * FROM CHARTS_WERKUREN WHERE AFDELING = 500 AND WERKNEMER = "+employeeslist.get(i).getHacoNr()+" AND BEGINTIJDH IS NOT NULL "
-					+ "AND BEGINTIJDM60 is not null and EINDTIJDH is not null and EINDTIJDM60 is not null "
-					+ "order by AFDELINGSEQ, DATUM, BEGINTIJDH, BEGINTIJDM60 limit 20"; /// USUNAC LIMIT!!!!!!!!!!!!!! DODALAM GO TYLKO DO CELOW TESTOWYCH!
+			//pobiera info ile rekordow z takim samym projektem 500 jest po kolei
+			
+			String query3 = "SELECT COUNT(CFPROJECT) FROM CHARTS_WERKUREN WHERE AFDELING = 500 AND WERKNEMER = "+employeeslist.get(i).getHacoNr()+" AND BEGINTIJDH IS NOT NULL"
+					+ " AND BEGINTIJDM60 is not null and EINDTIJDH is not null and EINDTIJDM60 is not null group by CFPROJECT order by AFDELINGSEQ, DATUM, BEGINTIJDH, BEGINTIJDM60"; 
 			
 			try{
 				
 				PreparedStatement pst3 = connection.prepareStatement(query3);
 				ResultSet rs3=pst3.executeQuery();
-				
-				// Old i New sluza do sprawdzenia czy jest wiecej rekordow z tym samym nr projektu (np. kilka razy pod rzad pojawia sie rekord 500/1)
-				String projectNrOld = "";
-				String projectNrNew = "";
-				int j = 0;
-				String projectBeginDay = "";
-				String projectBeginHour = "";
-				String projectBeginMin = "";
-				String projectEndDay = "";
-				String projectEndHour = "";
-				String projectEndMin = "";
-				
-				// znalezienie pierwszego i ostatniego odbicia na projekt 500/x (jesli jest kilka zapisow na projekt 500/x, np. pracownik wiele razy przerywal prace, 
-				//to skrypt pobiera tylko godzine rozpoczecia pierwszego odbicia i godzine zakonczenia ostatniego odbicia)
+	
+				project500iterateList.clear();
+				// stworz liste z liczbami rekordow dla takiego samego projektu 500
 				while(rs3.next()){
 					
-					projectNrNew = rs3.getString("CFPROJECT");
-					if(j == 0){
-						projectBeginDay = rs3.getString("DATUM");
-						projectBeginHour = String.format("%1$02d", rs3.getInt("BEGINTIJDH"));
-						projectBeginMin = String.format("%1$02d", rs3.getInt("BEGINTIJDM60"));
-						projectEndDay = rs3.getString("DATUM");
-						projectEndHour = String.format("%1$02d", rs3.getInt("BEGINTIJDH"));
-						projectEndMin = String.format("%1$02d", rs3.getInt("BEGINTIJDM60"));
-					}
-					if(projectNrNew.equals(projectNrOld)){
-						projectEndDay = rs3.getString("DATUM");
-						projectEndHour = String.format("%1$02d", rs3.getInt("BEGINTIJDH"));
-						projectEndMin = String.format("%1$02d", rs3.getInt("BEGINTIJDM60"));
-						j++;
-					}else{
-						j = 0;
-						// tutaj tworzy glownego taska dla jednego projektu 500/ (jeszcze bez subtaskow)
+					project500iterateList.add(rs3.getInt("COUNT(CFPROJECT)"));
+					
+				}
+				System.out.println(project500iterateList.toString());
+				
+			}catch (SQLException e3) {
+				// TODO Auto-generated catch block
+				e3.printStackTrace();
+			}
+			
+			String query4 = "SELECT * FROM CHARTS_WERKUREN WHERE AFDELING = 500 AND WERKNEMER = "+employeeslist.get(i).getHacoNr()+" AND BEGINTIJDH IS NOT NULL AND BEGINTIJDM60 is not null"
+					+ " and EINDTIJDH is not null and EINDTIJDM60 is not null order by AFDELINGSEQ, DATUM, BEGINTIJDH, BEGINTIJDM60 LIMIT 50"; /// TU NIE POWINNO BYC TEGO LIMITU!!!!!!!!! DALAM GO, BO POBIERA ZBYT DUZO WYNIKOW, GDY JEST ZBYT SZEROKI ZAKRES CZASU
+			
+			try{
+				
+				PreparedStatement pst4 = connection.prepareStatement(query4);
+				ResultSet rs4=pst4.executeQuery();
+				
+				int y = 0;
+				int j = 1;
+				int k = project500iterateList.get(y);
+				String project500 = "";
+				String date = "";
+				int beginH = 0;
+				int beginMIN = 0;
+				int endH = 0;
+				int endMIN = 0;
+				
+				while(rs4.next()){
+					
+					project500 = rs4.getString("CFPROJECT");
+					date = rs4.getString("DATUM");
+					beginH = rs4.getInt("BEGINTIJDH");
+					beginMIN = rs4.getInt("BEGINTIJDM60"); 
+					endH = rs4.getInt("EINDTIJDH");
+					endMIN = rs4.getInt("EINDTIJDM60");
+					
+					Project500 x = new Project500(project500, date, beginH, beginMIN, endH, endMIN);
+					project500List.add(x);
+					
+					if(k == j){
+					
+						System.out.println("K="+k);
+						
+						System.out.println(project500List);
+						
+						// renderuje glowny BAR Projektu 500
 						final Task t = new Task(
-								projectNrNew, 
-				                datetimeString(projectBeginDay + " " + projectBeginHour + ":" + projectBeginMin), datetimeString(projectEndDay + " " + projectEndHour + ":" + projectEndMin)
+								project500List.get(0).getProjectNr(), 
+				                datetimeString(project500List.get(0).getDateTimeBegin()), datetimeString(project500List.get(project500List.size()-1).getDateTimeEnd())
 								);
 						
-						System.out.println(projectNrNew);
-						System.out.println("START: "+projectBeginDay + " " + projectBeginHour + ":" + projectBeginMin);
-						System.out.println("END: "+projectEndDay + " " + projectEndHour + ":" + projectEndMin);
+						// renderuje sub-taski dla BARow Projektu 500
+						int z = 0;
+						for(z = 0; z < project500List.size(); z++){
+							
+							final Task sub = new Task(
+									project500List.get(z).getProjectNr(),
+									datetimeString(project500List.get(z).getDateTimeBegin()),
+									datetimeString(project500List.get(z).getDateTimeEnd())
+							);
+							sub.setPercentComplete(1.50); // TA LINIA RENDERUJE BAR W BARZE - MOZNA GO UZYC DO POKAZANIA CZASU TEORETYCZNEGO (ILE NA OBROBKE PRZEWIDZIAL TECHNOLOG)
+							t.addSubtask(sub);
+							
+						}
 						
 						s1.add(t);
 						
+						project500List.clear();
+						if(y+1 < project500iterateList.size()){
+							k = project500iterateList.get(y = y+1);
+						}
+						j = 0;
+						
 					}
-					projectNrOld = rs3.getString("CFPROJECT");
+					j++;
 					
 				}
 				
